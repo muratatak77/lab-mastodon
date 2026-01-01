@@ -1,0 +1,67 @@
+# frozen_string_literal: true
+
+class Api::V1::Timelines::HomeController < Api::V1::Timelines::BaseController
+  include AsyncRefreshesConcern
+
+  before_action -> { doorkeeper_authorize! :read, :'read:statuses' }
+  before_action :require_user!
+
+  PERMITTED_PARAMS = %i(local limit exclude_direct exclude_reblogs exclude_quotes exclude_replies).freeze
+
+  def show
+    with_read_replica do
+      @statuses = load_statuses
+      @relationships = StatusRelationshipsPresenter.new(@statuses, current_user&.account_id)
+    end
+
+    add_async_refresh_header(account_home_feed.async_refresh, retry_seconds: 5)
+
+    render json: @statuses,
+           each_serializer: REST::StatusSerializer,
+           relationships: @relationships,
+           status: account_home_feed.regenerating? ? 206 : 200
+  end
+
+  private
+
+  def load_statuses
+    preloaded_home_statuses
+  end
+
+  def preloaded_home_statuses
+    preload_collection home_statuses, Status
+  end
+
+  def home_statuses
+    account_home_feed.get(
+      limit_param(DEFAULT_STATUSES_LIMIT),
+      home_feed_params[:max_id],
+      home_feed_params[:since_id],
+      home_feed_params[:min_id]
+    )
+  end
+
+  def account_home_feed
+    HomeFeed.new(
+      current_account,
+      home_feed_params.slice(
+        :exclude_direct, :exclude_reblogs, :exclude_quotes, :exclude_replies
+      )
+    )
+  end
+
+  def home_feed_params
+    params.permit(
+      :max_id, :since_id, :min_id,
+      :exclude_direct, :exclude_reblogs, :exclude_quotes, :exclude_replies
+    )
+  end
+
+  def next_path
+    api_v1_timelines_home_url next_path_params
+  end
+
+  def prev_path
+    api_v1_timelines_home_url prev_path_params
+  end
+end

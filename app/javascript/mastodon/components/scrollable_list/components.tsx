@@ -1,0 +1,97 @@
+import type { ComponentPropsWithoutRef } from 'react';
+import { forwardRef } from 'react';
+
+import classNames from 'classnames';
+
+import { hasReactChildren } from '@/mastodon/utils/has_react_children';
+
+import { useColumn } from '../column/context';
+import { LoadingIndicator } from '../loading_indicator';
+
+import classes from './styles.module.scss';
+
+export const Scrollable = forwardRef<
+  HTMLDivElement,
+  ComponentPropsWithoutRef<'div'> & {
+    flex?: boolean;
+    fullscreen?: boolean;
+  }
+>(({ flex = true, fullscreen, className, children, ...otherProps }, ref) => {
+  const { scrollSensor } = useColumn();
+  return (
+    <div
+      className={classNames(
+        'scrollable',
+        { 'scrollable--flex': flex, fullscreen },
+        classes.withComposerPadding,
+        className,
+      )}
+      ref={ref}
+      {...otherProps}
+    >
+      {scrollSensor}
+      {children}
+    </div>
+  );
+});
+
+Scrollable.displayName = 'Scrollable';
+
+export const ItemList = forwardRef<
+  HTMLDivElement,
+  ComponentPropsWithoutRef<'div'> & {
+    isLoading?: boolean;
+    emptyMessage?: React.ReactNode;
+  }
+>(({ isLoading, emptyMessage, className, children, ...otherProps }, ref) => {
+  if (!isLoading && !hasReactChildren(children) && emptyMessage) {
+    return (
+      <div className='empty-column-indicator'>
+        <span>{emptyMessage}</span>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div
+        role='feed'
+        className={classNames('item-list', className)}
+        ref={ref}
+        {...otherProps}
+      >
+        {!isLoading && children}
+      </div>
+      {isLoading && (
+        <div className='scrollable__append'>
+          <LoadingIndicator />
+        </div>
+      )}
+    </>
+  );
+});
+
+ItemList.displayName = 'ItemList';
+
+export const Article = forwardRef<
+  HTMLElement,
+  ComponentPropsWithoutRef<'article'> & {
+    focusable?: boolean;
+    'data-id'?: string;
+    'aria-posinset': number;
+    'aria-setsize': number;
+  }
+>(({ focusable, className, children, ...otherProps }, ref) => {
+  return (
+    <article
+      ref={ref}
+      className={classNames(className, { focusable })}
+      tabIndex={-1}
+      {...otherProps}
+    >
+      {children}
+    </article>
+  );
+});
+
+Article.displayName = 'Article';

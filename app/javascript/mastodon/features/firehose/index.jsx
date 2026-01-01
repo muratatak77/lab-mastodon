@@ -1,0 +1,251 @@
+import PropTypes from 'prop-types';
+import { useCallback, useEffect } from 'react';
+
+import { useIntl, defineMessages, FormattedMessage } from 'react-intl';
+
+import { Helmet } from '@unhead/react/helmet';
+import { NavLink } from 'react-router-dom';
+
+import { useIdentity } from '@/mastodon/identity_context';
+import PublicIcon from '@/material-icons/400-24px/public.svg?react';
+import { addColumn } from 'mastodon/actions/columns';
+import { changeSetting } from 'mastodon/actions/settings';
+import { connectPublicStream, connectCommunityStream } from 'mastodon/actions/streaming';
+import { expandPublicTimeline, expandCommunityTimeline } from 'mastodon/actions/timelines';
+import { Column } from '@/mastodon/components/column';
+import { ColumnHeader as LegacyColumnHeader } from '@/mastodon/components/column/header';
+import { DismissableBanner } from 'mastodon/components/dismissable_banner';
+import { localLiveFeedAccess, remoteLiveFeedAccess, domain } from 'mastodon/initial_state';
+import { canViewFeed } from 'mastodon/permissions';
+import { useAppDispatch, useAppSelector } from 'mastodon/store';
+
+import SettingToggle from '../notifications/components/setting_toggle';
+import StatusListContainer from '../ui/containers/status_list_container';
+import { isRedesignEnabled } from '@/mastodon/utils/environment';
+import { ColumnHeader, ColumnSettingsMenu } from '@/mastodon/components/column_header';
+import { MultiColumnMenuItems } from '@/mastodon/components/column_header/multicolumn_settings';
+import { MenuItemCheckbox } from '@/mastodon/components/menu';
+
+const messages = defineMessages({
+  title: { id: 'column.firehose', defaultMessage: 'Live feeds' },
+  title_local: {
+    id: 'column.firehose_local',
+    defaultMessage: 'Live feed for this server',
+  },
+  title_singular: {
+    id: 'column.firehose_singular',
+    defaultMessage: 'Live feed',
+  },
+  title_redesign: { id: 'tabs_bar.public_feeds', defaultMessage: 'Public Feeds' },
+  title_singular_redesign: { id: 'tabs_bar.public_feed', defaultMessage: 'Public Feed' },
+});
+
+const FirehoseSettingsMenuItems = () => {
+  const dispatch = useAppDispatch();
+  const settings = useAppSelector((state) => state.getIn(['settings', 'firehose']));
+  const onChange = useCallback(
+    ({value, checked}) => dispatch(changeSetting(['firehose', value], checked)),
+    [dispatch],
+  );
+
+
+  return (
+      <MenuItemCheckbox
+        value='onlyMedia'
+        checked={settings.get('onlyMedia', false)}
+        onChange={onChange}
+        keepMenuOpenOnClick
+      >
+        <FormattedMessage
+          id='community.column_settings.media_only'
+          defaultMessage='Media only'
+        />
+      </MenuItemCheckbox>
+  );
+};
+
+const Firehose = ({ feedType, multiColumn }) => {
+  const dispatch = useAppDispatch();
+  const intl = useIntl();
+  const { signedIn, permissions } = useIdentity();
+
+  const onlyMedia = useAppSelector((state) => state.getIn(['settings', 'firehose', 'onlyMedia'], false));
+  const hasUnread = useAppSelector((state) => state.getIn(['timelines', `${feedType}${onlyMedia ? ':media' : ''}`, 'unread'], 0) > 0);
+
+  const handlePin = useCallback(
+    () => {
+      switch(feedType) {
+      case 'community':
+        dispatch(addColumn('COMMUNITY', { other: { onlyMedia } }));
+        break;
+      case 'public':
+        dispatch(addColumn('PUBLIC', { other: { onlyMedia } }));
+        break;
+      case 'public:remote':
+        dispatch(addColumn('REMOTE', { other: { onlyMedia, onlyRemote: true } }));
+        break;
+      }
+    },
+    [dispatch, onlyMedia, feedType],
+  );
+
+  const handleLoadMore = useCallback(
+    (maxId) => {
+      switch(feedType) {
+      case 'community':
+        dispatch(expandCommunityTimeline({ maxId, onlyMedia }));
+        break;
+      case 'public':
+        dispatch(expandPublicTimeline({ maxId, onlyMedia }));
+        break;
+      case 'public:remote':
+        dispatch(expandPublicTimeline({ maxId, onlyMedia, onlyRemote: true }));
+        break;
+      }
+    },
+    [dispatch, onlyMedia, feedType],
+  );
+
+  useEffect(() => {
+    let disconnect;
+
+    switch(feedType) {
+    case 'community':
+      dispatch(expandCommunityTimeline({ onlyMedia }));
+      if (signedIn) {
+        disconnect = dispatch(connectCommunityStream({ onlyMedia }));
+      }
+      break;
+    case 'public':
+      dispatch(expandPublicTimeline({ onlyMedia }));
+      if (signedIn) {
+        disconnect = dispatch(connectPublicStream({ onlyMedia }));
+      }
+      break;
+    case 'public:remote':
+      dispatch(expandPublicTimeline({ onlyMedia, onlyRemote: true }));
+      if (signedIn) {
+        disconnect = dispatch(connectPublicStream({ onlyMedia, onlyRemote: true }));
+      }
+      break;
+    }
+
+    return () => disconnect?.();
+  }, [dispatch, signedIn, feedType, onlyMedia]);
+
+  const prependBanner = feedType === 'community' ? (
+    <DismissableBanner id='community_timeline'>
+      <FormattedMessage
+        id='dismissable_banner.community_timeline'
+        defaultMessage='These are the most recent public posts from people whose accounts are hosted by {domain}.'
+        values={{ domain }}
+      />
+    </DismissableBanner>
+  ) : (
+    <DismissableBanner id='public_timeline'>
+      <FormattedMessage
+        id='dismissable_banner.public_timeline'
+        defaultMessage='These are the most recent public posts from people on the fediverse that people on {domain} follow.'
+        values={{ domain }}
+      />
+    </DismissableBanner>
+  );
+
+  const emptyMessage = feedType === 'community' ? (
+    <FormattedMessage
+      id='empty_column.community'
+      defaultMessage='The local timeline is empty. Write something publicly to get the ball rolling!'
+    />
+  ) : (
+    <FormattedMessage
+      id='empty_column.public'
+      defaultMessage='There is nothing here! Write something publicly, or manually follow users from other servers to fill it up'
+    />
+  );
+
+  const canViewSelectedFeed = canViewFeed(signedIn, permissions, feedType === 'community' ? localLiveFeedAccess : remoteLiveFeedAccess);
+
+  const disabledTimelineMessage = (
+    <FormattedMessage
+      id='empty_column.disabled_feed'
+      defaultMessage='This feed has been disabled by your server administrators.'
+    />
+  );
+
+  const canViewLocalFeed = canViewFeed(signedIn, permissions, localLiveFeedAccess);
+  const canViewRemoteFeed = canViewFeed(signedIn, permissions, remoteLiveFeedAccess);
+
+  let title;
+  if (canViewLocalFeed && canViewRemoteFeed) {
+    title = messages.title;
+  } else if (canViewLocalFeed) {
+    title = messages.title_local;
+  } else {
+    title = messages.title_singular;
+  }
+
+  if (isRedesignEnabled()) {
+    const canOnlyViewSingleFeed = canViewLocalFeed !== canViewRemoteFeed;
+
+    title = canOnlyViewSingleFeed
+      ? intl.formatMessage(messages.title_singular_redesign)
+      : intl.formatMessage(messages.title_redesign);
+  }
+
+  return (
+    <Column bindToDocument={!multiColumn} label={intl.formatMessage(messages.title)}>
+      <ColumnHeader
+        title={title}
+        withBackButton={multiColumn && 'auto'}
+        withUnreadMarker={hasUnread}
+        extraButtons={
+          <ColumnSettingsMenu labelPrefix={intl.formatMessage(messages.title_redesign)}>
+            <FirehoseSettingsMenuItems />
+            {multiColumn && (
+              <MultiColumnMenuItems onPin={handlePin} />
+            )}
+          </ColumnSettingsMenu>
+        }
+      />
+     
+
+      {(canViewFeed(signedIn, permissions, localLiveFeedAccess) && canViewFeed(signedIn, permissions, remoteLiveFeedAccess)) && (
+        <div className='account__section-headline'>
+          <NavLink exact to='/public/local'>
+            <FormattedMessage tagName='div' id='firehose.local' defaultMessage='This server' />
+          </NavLink>
+
+          <NavLink exact to='/public/remote'>
+            <FormattedMessage tagName='div' id='firehose.remote' defaultMessage='Other servers' />
+          </NavLink>
+
+          <NavLink exact to='/public'>
+            <FormattedMessage tagName='div' id='firehose.all' defaultMessage='All' />
+          </NavLink>
+        </div>
+      )}
+
+      <StatusListContainer
+        prepend={prependBanner}
+        timelineId={`${feedType}${onlyMedia ? ':media' : ''}`}
+        onLoadMore={handleLoadMore}
+        trackScroll
+        scrollKey='firehose'
+        emptyMessage={canViewSelectedFeed ? emptyMessage : disabledTimelineMessage}
+        bindToDocument={!multiColumn}
+      />
+
+      <Helmet>
+        <title>{intl.formatMessage(messages.title)}</title>
+        <meta name='robots' content='noindex' />
+      </Helmet>
+    </Column>
+  );
+};
+
+Firehose.propTypes = {
+  multiColumn: PropTypes.bool,
+  feedType: PropTypes.string,
+};
+
+export default Firehose;

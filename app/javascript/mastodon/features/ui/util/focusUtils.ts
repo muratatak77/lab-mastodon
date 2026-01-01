@@ -1,0 +1,239 @@
+import {
+  getColumnSkipLinkId,
+  getNavigationSkipLinkId,
+} from '../components/skip_links';
+
+/**
+ * Out of a list of elements, return the first one whose top edge
+ * is inside of the viewport, and return the element and its BoundingClientRect.
+ */
+function findFirstVisibleWithRect(
+  items: HTMLElement[],
+): { item: HTMLElement; rect: DOMRect } | null {
+  const viewportHeight =
+    window.innerHeight || document.documentElement.clientHeight;
+
+  for (const item of items) {
+    const rect = item.getBoundingClientRect();
+    const isVisible = rect.top >= 0 && rect.top < viewportHeight;
+
+    if (isVisible) {
+      return { item, rect };
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Move focus to the column of the passed index (1-based).
+ * Focus is placed on the topmost visible item, or the column title.
+ */
+export function focusFirstVisibleItemInColumn(columnIndex: number) {
+  const allColumns = Array.from(
+    document.querySelectorAll(`[data-column-root]`),
+  );
+  const column = allColumns[columnIndex - 1];
+
+  if (!column) {
+    return false;
+  }
+
+  function fallback() {
+    focusColumn(columnIndex);
+    return false;
+  }
+
+  const itemContainer = column.querySelector('.scrollable');
+
+  if (!itemContainer) {
+    return fallback();
+  }
+
+  const focusableItems = Array.from(
+    itemContainer.querySelectorAll<HTMLElement>('.focusable'),
+  );
+
+  // Find first item visible in the viewport
+  const itemToFocus = findFirstVisibleWithRect(focusableItems);
+
+  if (!itemToFocus) {
+    return fallback();
+  }
+
+  const viewportWidth =
+    window.innerWidth || document.documentElement.clientWidth;
+  const { item, rect } = itemToFocus;
+
+  const isMultiColumnLayout = !!document.querySelector(
+    'body.layout-multiple-columns',
+  );
+  const scrollParent = isMultiColumnLayout
+    ? itemContainer
+    : document.documentElement;
+
+  const columnHeaderHeight =
+    parseInt(
+      getComputedStyle(scrollParent).getPropertyValue(
+        '--current-column-header-height',
+      ),
+    ) || 0;
+
+  if (
+    scrollParent.scrollTop > item.offsetTop - columnHeaderHeight ||
+    rect.right > viewportWidth ||
+    rect.left < 0
+  ) {
+    itemToFocus.item.scrollIntoView(true);
+  }
+  itemToFocus.item.focus();
+  return true;
+}
+
+/**
+ * Move focus to the column of the passed index (1-based).
+ * Focus is placed on the topmost visible item, or the column title.
+ */
+export function focusColumn(index = 1) {
+  const idToFocus =
+    index === 1 ? getNavigationSkipLinkId() : getColumnSkipLinkId(index - 1);
+  const title = document.querySelector<HTMLElement>(`#${idToFocus}`);
+
+  if (!title) {
+    return false;
+  }
+
+  title.focus();
+  return true;
+}
+
+/**
+ * Get the index of the currently focused item in one of our item lists
+ */
+export function getFocusedItemIndex() {
+  const focusedItem = document.activeElement?.closest('.item-list > *');
+  if (!focusedItem) return -1;
+
+  const { parentElement } = focusedItem;
+  if (!parentElement) return -1;
+
+  const items = Array.from(parentElement.children);
+  return items.indexOf(focusedItem);
+}
+
+/**
+ * Get the index of the column that contains the user's focus
+ */
+export function getFocusedColumnIndex() {
+  const columnWithFocus = document.activeElement?.closest('[data-column-root]');
+
+  if (!columnWithFocus) return 1;
+
+  const allColumns = Array.from(
+    document.querySelectorAll('[data-column-root]'),
+  );
+  return allColumns.indexOf(columnWithFocus) + 1;
+}
+
+/**
+ * Focus the topmost item of the column that currently has focus,
+ * or the first column if none
+ */
+export function focusFirstItem() {
+  const focusedElement = document.activeElement;
+  const container =
+    focusedElement?.closest('.scrollable') ??
+    document.querySelector('.scrollable');
+
+  if (!container) return;
+
+  const itemToFocus = container.querySelector<HTMLElement>('.focusable');
+
+  if (itemToFocus) {
+    container.scrollTo(0, 0);
+    itemToFocus.focus();
+  }
+}
+
+/**
+ * Focus the item next to the one with the provided index
+ */
+export function focusItemSibling(index: number, direction: 1 | -1) {
+  const focusedElement = document.activeElement;
+  const itemList = focusedElement?.closest('.item-list');
+
+  const siblingItem = itemList?.querySelector<HTMLElement>(
+    // :nth-child uses 1-based indexing
+    `.item-list > :nth-child(${index + 1 + direction})`,
+  );
+
+  if (!siblingItem) {
+    return focusListSibling(direction);
+  }
+
+  // Check if the sibling is a post or a 'follow suggestions' widget
+  let targetElement = siblingItem.matches('.focusable')
+    ? siblingItem
+    : siblingItem.querySelector<HTMLElement>('.focusable');
+
+  // Otherwise, check if the item is a 'load more' button.
+  if (!targetElement && siblingItem.matches('.load-more')) {
+    targetElement = siblingItem;
+  }
+  // If sibling element is empty, we skip it
+  if (!targetElement || siblingItem.matches(':empty')) {
+    return focusItemSibling(index + direction, direction);
+  }
+
+  targetElement.scrollIntoView({
+    block: 'start',
+  });
+
+  targetElement.focus();
+
+  return true;
+}
+
+/**
+ * Finds the next or previous .item-list on the page or in the column,
+ * and focuses its first or last item.
+ */
+function focusListSibling(direction: 1 | -1) {
+  const container = document.activeElement?.closest('.item-list');
+
+  if (!container) {
+    return false;
+  }
+
+  // Get all item lists in the current column or page
+  const currentColumn = container.closest('[data-column-root]') ?? document;
+
+  const columnItemLists = Array.from(
+    currentColumn.querySelectorAll('.item-list'),
+  );
+  const currentListIndex = columnItemLists.indexOf(container);
+
+  // Find the next or previous item-list
+  const listSibling = columnItemLists[currentListIndex + direction];
+
+  // Depending on the direction, find the first or last focusable in the list
+  let targetElement: HTMLElement | null | undefined;
+  if (direction > 0) {
+    targetElement = listSibling?.querySelector<HTMLElement>('.focusable');
+  } else {
+    const allFocusables =
+      listSibling?.querySelectorAll<HTMLElement>('.focusable');
+    targetElement = allFocusables?.[allFocusables.length - 1];
+  }
+
+  if (targetElement) {
+    targetElement.scrollIntoView({
+      block: 'start',
+    });
+
+    targetElement.focus();
+    return true;
+  } else {
+    return false;
+  }
+}
