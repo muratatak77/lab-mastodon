@@ -37,7 +37,7 @@ class StatusCacheHydrator
       payload[:muted]      = false
       payload[:bookmarked] = false
       payload[:bookmark_note] = nil
-      payload[:pinned]     = false if @status.account_id == account.id
+      payload[:pinned] = false if @status.account_id == account.id
 
       # If the reblogged status is being delivered to the author who disabled the display of the application
       # used to create the status, we need to hydrate it here too
