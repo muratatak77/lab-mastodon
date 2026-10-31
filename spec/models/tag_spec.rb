@@ -139,8 +139,8 @@ RSpec.describe Tag do
       expect(subject.match('hello #one_two_three').to_s).to eq '#one_two_three'
     end
 
-    it 'matches middle dots' do
-      expect(subject.match('hello #one·two·three').to_s).to eq '#one·two·three'
+    it 'stops matching at middle dots' do
+      expect(subject.match('hello #one·two·three').to_s).to eq '#one'
     end
 
     it 'matches ・unicode in ぼっち・ざ・ろっく correctly' do
@@ -156,7 +156,7 @@ RSpec.describe Tag do
     end
 
     it 'does not match middle dots at the end' do
-      expect(subject.match('hello #one·two·three·').to_s).to eq '#one·two·three'
+      expect(subject.match('hello #one·two·three·').to_s).to eq '#one'
     end
 
     it 'does not match purely-numeric hashtags' do
