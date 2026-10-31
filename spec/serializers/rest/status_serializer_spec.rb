@@ -19,6 +19,42 @@ RSpec.describe REST::StatusSerializer do
   let(:bob)   { Fabricate(:account, username: 'bob', domain: 'other.com') }
   let(:status) { Fabricate(:status, account: alice) }
 
+  describe 'bookmark note' do
+    subject { serialized_record_json(status, described_class, options:) }
+
+    let(:options) { { scope: current_user, scope_name: :current_user } }
+
+    context 'without a bookmark' do
+      it { is_expected.to include('bookmark_note' => nil) }
+    end
+
+    context 'with a note left by the current user' do
+      before { Fabricate(:bookmark, account: current_user.account, status: status, note: 'Cite this in the report') }
+
+      it { is_expected.to include('bookmark_note' => 'Cite this in the report') }
+
+      context 'when relationships are preloaded' do
+        let(:options) { super().merge(relationships: StatusRelationshipsPresenter.new([status], current_user.account_id)) }
+
+        it { is_expected.to include('bookmark_note' => 'Cite this in the report') }
+      end
+    end
+
+    context 'with a note left by another user' do
+      before { Fabricate(:bookmark, status: status, note: 'Not for you') }
+
+      it { is_expected.to include('bookmark_note' => nil) }
+    end
+
+    context 'without a current user' do
+      let(:options) { { scope: nil, scope_name: :current_user } }
+
+      before { Fabricate(:bookmark, status: status, note: 'Not for you') }
+
+      it { is_expected.to_not have_key('bookmark_note') }
+    end
+  end
+
   context 'with a local status' do
     context 'with a quote and a CW but no contents' do
       let(:quoted_status) { Fabricate(:status, account: alice) }

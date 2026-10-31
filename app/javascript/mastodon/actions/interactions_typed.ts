@@ -5,6 +5,7 @@ import {
   apiUnreblog,
   apiRevokeQuote,
   apiGetQuotes,
+  apiSaveBookmarkNote,
 } from '@/mastodon/api/interactions';
 import type { MediaAttachmentType } from '@/mastodon/api_types/media_attachments';
 import { browserHistory } from '@/mastodon/components/router';
@@ -46,6 +47,7 @@ import {
 
 export type StatusInteractionIntent =
   | 'bookmark'
+  | 'bookmarkNote'
   | 'copy'
   | 'delete'
   | 'edit'
@@ -152,6 +154,14 @@ export const statusInteraction = createAppThunk(
         } else {
           dispatch(bookmark(statusImmutable));
         }
+        return;
+      case 'bookmarkNote':
+        dispatch(
+          openModal({
+            modalType: 'BOOKMARK_NOTE',
+            modalProps: { statusId },
+          }),
+        );
         return;
       case 'copy':
         void navigator.clipboard
@@ -400,6 +410,17 @@ export const revokeQuote = createDataLoadingThunk(
     statusId: string;
     quotedStatusId: string;
   }) => apiRevokeQuote(quotedStatusId, statusId),
+  (data, { dispatch, discardLoadData }) => {
+    dispatch(importFetchedStatus(data));
+
+    return discardLoadData;
+  },
+);
+
+export const saveBookmarkNote = createDataLoadingThunk(
+  'status/save_bookmark_note',
+  ({ statusId, note }: { statusId: string; note: string }) =>
+    apiSaveBookmarkNote(statusId, note),
   (data, { dispatch, discardLoadData }) => {
     dispatch(importFetchedStatus(data));
 

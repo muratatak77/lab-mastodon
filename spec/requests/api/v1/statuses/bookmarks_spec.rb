@@ -32,6 +32,84 @@ RSpec.describe 'Bookmarks' do
       end
     end
 
+    context 'with a note' do
+      subject do
+        post "/api/v1/statuses/#{status.id}/bookmark", headers: headers, params: { note: note }
+      end
+
+      let(:note) { 'Recipe to try this weekend' }
+
+      it 'bookmarks the status and returns the note', :aggregate_failures do
+        subject
+
+        expect(response).to have_http_status(200)
+        expect(user.account.bookmarks.find_by(status: status).note).to eq note
+        expect(response.parsed_body).to match(
+          a_hash_including(id: status.id.to_s, bookmarked: true, bookmark_note: note)
+        )
+      end
+
+      context 'when the status is already bookmarked' do
+        before { Fabricate(:bookmark, account: user.account, status: status, note: 'Old note') }
+
+        it 'replaces the note on the existing bookmark', :aggregate_failures do
+          expect { subject }
+            .to_not change(Bookmark, :count)
+
+          expect(response).to have_http_status(200)
+          expect(response.parsed_body).to match(a_hash_including(bookmark_note: note))
+        end
+
+        context 'when the note is blank' do
+          let(:note) { '' }
+
+          it 'clears the note and keeps the bookmark', :aggregate_failures do
+            subject
+
+            expect(response).to have_http_status(200)
+            expect(user.account.bookmarked?(status)).to be true
+            expect(response.parsed_body).to match(a_hash_including(bookmarked: true, bookmark_note: nil))
+          end
+        end
+      end
+
+      context 'when the note is too long' do
+        let(:note) { 'a' * (Bookmark::NOTE_LENGTH_LIMIT + 1) }
+
+        it 'returns http unprocessable content without bookmarking', :aggregate_failures do
+          subject
+
+          expect(response).to have_http_status(422)
+          expect(user.account.bookmarked?(status)).to be false
+        end
+      end
+
+      context 'when the status is a reblog' do
+        let(:status) { Fabricate(:status, reblog: Fabricate(:status)) }
+
+        it 'stores the note on the original status', :aggregate_failures do
+          subject
+
+          expect(response).to have_http_status(200)
+          expect(user.account.bookmarks.find_by(status: status.reblog).note).to eq note
+          expect(response.parsed_body).to match(
+            a_hash_including(reblog: a_hash_including(bookmark_note: note))
+          )
+        end
+      end
+    end
+
+    context 'when the status is already bookmarked with a note and no note is given' do
+      before { Fabricate(:bookmark, account: user.account, status: status, note: 'Keep me') }
+
+      it 'leaves the note untouched', :aggregate_failures do
+        subject
+
+        expect(response).to have_http_status(200)
+        expect(response.parsed_body).to match(a_hash_including(bookmark_note: 'Keep me'))
+      end
+    end
+
     context 'with private status of not-followed account' do
       let(:status) { Fabricate(:status, visibility: :private) }
 

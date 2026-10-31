@@ -33,6 +33,7 @@ import { getHashtagBarForStatus } from './hashtag_bar';
 import StatusActionBar from './action_bar';
 import StatusContent from './content';
 import { StatusThreadLabel } from './thread_label';
+import { StatusBookmarkNote } from '../bookmark_note';
 import { StatusBoostIcon } from '../icons';
 
 const domParser = new DOMParser();
@@ -630,6 +631,7 @@ class Status extends ImmutablePureComponent {
 
                 {media}
                 {hashtagBar}
+                {!isQuotedPost && <StatusBookmarkNote statusId={status.get('id')} />}
 
                 {children}
               </>

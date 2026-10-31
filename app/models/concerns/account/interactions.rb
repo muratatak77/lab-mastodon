@@ -200,6 +200,10 @@ module Account::Interactions
     status.proper.bookmarks.exists?(account: self)
   end
 
+  def bookmark_note(status)
+    bookmarks.where(status_id: status.id).pick(:note)
+  end
+
   def reblogged?(status)
     status.proper.reblogs.exists?(account: self)
   end

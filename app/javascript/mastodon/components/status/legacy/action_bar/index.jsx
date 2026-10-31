@@ -42,6 +42,8 @@ const baseMessages = defineMessages({
   removeFavourite: { id: 'status.remove_favourite', defaultMessage: 'Remove from favorites' },
   bookmark: { id: 'status.bookmark', defaultMessage: 'Bookmark' },
   removeBookmark: { id: 'status.remove_bookmark', defaultMessage: 'Remove bookmark' },
+  addBookmarkNote: { id: 'status.bookmark_note.add', defaultMessage: 'Add note' },
+  editBookmarkNote: { id: 'status.bookmark_note.edit', defaultMessage: 'Edit note' },
   open: { id: 'status.open', defaultMessage: 'Expand this status' },
   report: { id: 'status.report', defaultMessage: 'Report @{name}' },
   muteConversation: { id: 'status.mute_conversation', defaultMessage: 'Mute conversation' },
@@ -107,6 +109,7 @@ class StatusActionBar extends ImmutablePureComponent {
     onMuteConversation: PropTypes.func,
     onPin: PropTypes.func,
     onBookmark: PropTypes.func,
+    onBookmarkNote: PropTypes.func,
     onFilter: PropTypes.func,
     onAddFilter: PropTypes.func,
     onInteractionModal: PropTypes.func,
@@ -160,6 +163,10 @@ class StatusActionBar extends ImmutablePureComponent {
 
   handleBookmarkClick = () => {
     this.props.onBookmark(this.props.status);
+  };
+
+  handleBookmarkNoteClick = () => {
+    this.props.onBookmarkNote(this.props.status);
   };
 
   handleDeleteClick = () => {
@@ -300,6 +307,11 @@ class StatusActionBar extends ImmutablePureComponent {
 
     if (signedIn) {
       menu.push(null);
+
+      if (status.get('bookmarked')) {
+        menu.push({ text: intl.formatMessage(status.get('bookmark_note') ? messages.editBookmarkNote : messages.addBookmarkNote), action: this.handleBookmarkNoteClick });
+        menu.push(null);
+      }
 
       if (writtenByMe && pinnableStatus) {
         menu.push({ text: intl.formatMessage(status.get('pinned') ? messages.unpin : messages.pin), action: this.handlePinClick });

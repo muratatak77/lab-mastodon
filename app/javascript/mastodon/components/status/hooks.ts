@@ -615,6 +615,14 @@ const menuMessages = defineMessages({
     id: 'status.quote_policy_change',
     defaultMessage: 'Change who can quote',
   },
+  addBookmarkNote: {
+    id: 'status.bookmark_note.add',
+    defaultMessage: 'Add note',
+  },
+  editBookmarkNote: {
+    id: 'status.bookmark_note.edit',
+    defaultMessage: 'Edit note',
+  },
 });
 
 export function useStatusMenuActions({
@@ -773,6 +781,18 @@ function getMenuItems({
   }
 
   menu.push(null);
+
+  if (status.bookmarked) {
+    menu.push({
+      text: intl.formatMessage(
+        status.bookmark_note
+          ? menuMessages.editBookmarkNote
+          : menuMessages.addBookmarkNote,
+      ),
+      action: onStatusInteraction('bookmarkNote'),
+    });
+    menu.push(null);
+  }
 
   if (interactions.pin) {
     menu.push({

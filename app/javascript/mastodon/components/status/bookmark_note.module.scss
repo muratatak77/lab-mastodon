@@ -1,0 +1,20 @@
+@use '@/styles/mastodon/mixins';
+
+.root {
+  @include mixins.type-meta;
+
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin-block: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-inline-start: 2px solid var(--color-border-primary);
+  color: var(--color-text-secondary);
+}
+
+.text {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

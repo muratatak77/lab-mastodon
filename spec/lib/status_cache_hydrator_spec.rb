@@ -52,6 +52,27 @@ RSpec.describe StatusCacheHydrator do
         end
       end
 
+      context 'when handling a status bookmarked with a note' do
+        before do
+          Fabricate(:bookmark, account: account, status: status, note: 'Come back to this')
+        end
+
+        it 'renders the same attributes as a full render' do
+          expect(subject).to eql(compare_to_hash)
+          expect(subject[:bookmark_note]).to eq 'Come back to this'
+        end
+      end
+
+      context 'when handling a status someone else bookmarked with a note' do
+        before do
+          Fabricate(:bookmark, status: status, note: 'Not for this account')
+        end
+
+        it 'does not expose the note' do
+          expect(subject[:bookmark_note]).to be_nil
+        end
+      end
+
       context 'when handling a filtered status' do
         let(:status) { Fabricate(:status, text: 'this toot is about that banned word') }
 

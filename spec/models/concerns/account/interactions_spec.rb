@@ -626,6 +626,24 @@ RSpec.describe Account::Interactions do
     end
   end
 
+  describe '#bookmark_note' do
+    subject { account.bookmark_note(status) }
+
+    let(:status) { Fabricate(:status) }
+
+    context 'when the account has bookmarked the status with a note' do
+      before { Fabricate(:bookmark, account: account, status: status, note: 'Read again') }
+
+      it { is_expected.to eq 'Read again' }
+    end
+
+    context 'when another account has bookmarked the status with a note' do
+      before { Fabricate(:bookmark, status: status, note: 'Read again') }
+
+      it { is_expected.to be_nil }
+    end
+  end
+
   describe '#pinned?' do
     subject { account.pinned?(status) }
 

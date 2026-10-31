@@ -11,6 +11,7 @@ import { FormattedMessage } from 'react-intl';
 import classNames from 'classnames';
 import { Link } from 'react-router-dom';
 
+import { StatusBookmarkNote } from '@/mastodon/components/status/bookmark_note';
 import StatusContent from '@/mastodon/components/status/legacy/content';
 import { ContentWarning } from '@/mastodon/components/status/legacy/content_warning';
 import { FilterWarning } from '@/mastodon/components/status/legacy/filter_warning';
@@ -507,6 +508,7 @@ export const DetailedStatus: React.FC<{
 
             {media}
             {hashtagBar}
+            <StatusBookmarkNote statusId={status.get('id')} />
 
             {status.get('quote') && (
               <QuotedStatus

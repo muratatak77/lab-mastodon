@@ -56,6 +56,18 @@ RSpec.describe StatusRelationshipsPresenter do
       end
     end
 
+    context 'when options[:bookmark_notes_map] is set' do
+      let(:options) { { bookmark_notes_map: { statuses.first.id => nil } } }
+
+      before do
+        Fabricate(:bookmark, account_id: current_account_id, status: statuses.first, note: 'Stale note')
+      end
+
+      it 'overrides notes loaded from the database' do
+        expect(presenter.bookmark_notes_map).to eq(statuses.first.id => nil)
+      end
+    end
+
     context 'when options[:mutes_map] is set' do
       let(:options) { { mutes_map: { 5 => true } } }
 

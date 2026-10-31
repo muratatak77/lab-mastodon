@@ -5,6 +5,7 @@
 # Table name: bookmarks
 #
 #  id         :bigint(8)        not null, primary key
+#  note       :text
 #  created_at :datetime         not null
 #  updated_at :datetime         not null
 #  account_id :bigint(8)        not null
@@ -14,12 +15,17 @@
 class Bookmark < ApplicationRecord
   include Paginable
 
+  NOTE_LENGTH_LIMIT = 1_000
+
   update_index('statuses', :status) if Chewy.enabled?
 
   belongs_to :account, inverse_of: :bookmarks
   belongs_to :status,  inverse_of: :bookmarks
 
+  normalizes :note, with: ->(note) { note.strip.presence }
+
   validates :status_id, uniqueness: { scope: :account_id }
+  validates :note, length: { maximum: NOTE_LENGTH_LIMIT }
 
   before_validation do
     self.status = status.reblog if status&.reblog?

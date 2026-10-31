@@ -366,6 +366,10 @@ class Status < ApplicationRecord
       Bookmark.select(:status_id).where(status_id: status_ids).where(account_id: account_id).to_h { |f| [f.status_id, true] }
     end
 
+    def bookmark_notes_map(status_ids, account_id)
+      Bookmark.where(status_id: status_ids, account_id: account_id).where.not(note: nil).pluck(:status_id, :note).to_h
+    end
+
     def reblogs_map(status_ids, account_id)
       unscoped.select(:reblog_of_id).where(reblog_of_id: status_ids).where(account_id: account_id).to_h { |s| [s.reblog_of_id, true] }
     end

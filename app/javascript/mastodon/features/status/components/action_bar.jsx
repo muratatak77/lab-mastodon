@@ -38,6 +38,8 @@ const baseMessages = defineMessages({
   removeFavourite: { id: 'status.remove_favourite', defaultMessage: 'Remove from favorites' },
   bookmark: { id: 'status.bookmark', defaultMessage: 'Bookmark' },
   removeBookmark: { id: 'status.remove_bookmark', defaultMessage: 'Remove bookmark' },
+  addBookmarkNote: { id: 'status.bookmark_note.add', defaultMessage: 'Add note' },
+  editBookmarkNote: { id: 'status.bookmark_note.edit', defaultMessage: 'Edit note' },
   more: { id: 'status.more', defaultMessage: 'More' },
   mute: { id: 'status.mute', defaultMessage: 'Mute @{name}' },
   muteConversation: { id: 'status.mute_conversation', defaultMessage: 'Mute conversation' },
@@ -90,6 +92,7 @@ class ActionBar extends PureComponent {
     onReblog: PropTypes.func.isRequired,
     onFavourite: PropTypes.func.isRequired,
     onBookmark: PropTypes.func.isRequired,
+    onBookmarkNote: PropTypes.func.isRequired,
     onDelete: PropTypes.func.isRequired,
     onRevokeQuote: PropTypes.func,
     onQuote: PropTypes.func,
@@ -124,6 +127,10 @@ class ActionBar extends PureComponent {
 
   handleBookmarkClick = (e) => {
     this.props.onBookmark(this.props.status, e);
+  };
+
+  handleBookmarkNoteClick = () => {
+    this.props.onBookmarkNote(this.props.status);
   };
 
   handleDeleteClick = () => {
@@ -263,6 +270,11 @@ class ActionBar extends PureComponent {
 
     if (signedIn) {
       menu.push(null);
+
+      if (status.get('bookmarked')) {
+        menu.push({ text: intl.formatMessage(status.get('bookmark_note') ? messages.editBookmarkNote : messages.addBookmarkNote), action: this.handleBookmarkNoteClick });
+        menu.push(null);
+      }
 
       if (writtenByMe) {
         if (pinnableStatus) {

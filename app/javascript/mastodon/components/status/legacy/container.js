@@ -85,6 +85,13 @@ const mapDispatchToProps = (dispatch, { contextType }) => ({
     }
   },
 
+  onBookmarkNote (status) {
+    dispatch(openModal({
+      modalType: 'BOOKMARK_NOTE',
+      modalProps: { statusId: status.get('id') },
+    }));
+  },
+
   onPin (status) {
     if (status.get('pinned')) {
       dispatch(unpin(status));
