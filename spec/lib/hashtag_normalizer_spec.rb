@@ -22,8 +22,12 @@ RSpec.describe HashtagNormalizer do
       expect(subject.normalize('#foo')).to eq 'foo'
     end
 
+    it 'strips out middle dots' do
+      expect(subject.normalize('a·b')).to eq 'ab'
+    end
+
     it 'keeps valid characters' do
-      expect(subject.normalize('a·b')).to eq 'a·b'
+      expect(subject.normalize('a_b')).to eq 'a_b'
     end
   end
 end
