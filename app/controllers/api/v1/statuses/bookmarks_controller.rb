@@ -6,7 +6,7 @@ class Api::V1::Statuses::BookmarksController < Api::V1::Statuses::BaseController
   skip_before_action :set_status, only: [:destroy]
 
   def create
-    BookmarkService.new.call(current_account, @status, note: bookmark_params[:note])
+    BookmarkService.new.call(current_account, @status, note: bookmark_params[:note])  # changed on the base while this PR was open (1793894332)
     render json: @status, serializer: REST::StatusSerializer
   end
 
