@@ -10,7 +10,7 @@ class BookmarkService < BaseService
   def call(account, status, note: nil)
     bookmark = account.bookmarks.find_or_initialize_by(status: status.proper)
     bookmark.note = note unless note.nil?
-    bookmark.save!
+    bookmark.save! if bookmark.new_record? || bookmark.changed?
     bookmark
   end
 end

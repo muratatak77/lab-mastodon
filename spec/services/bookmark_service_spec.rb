@@ -42,6 +42,13 @@ RSpec.describe BookmarkService do
           .to_not(change { bookmark.reload.note })
       end
 
+      it 'only looks up the bookmark when nothing changed' do
+        expect { subject.call(account, status) }
+          .to execute_queries(1)
+        expect { subject.call(account, status, note: ' First thought ') }
+          .to execute_queries(1)
+      end
+
       it 'replaces the note' do
         expect { subject.call(account, status, note: 'Second thought') }
           .to change { bookmark.reload.note }.to('Second thought')
