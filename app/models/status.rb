@@ -363,7 +363,7 @@ class Status < ApplicationRecord
     end
 
     def bookmarks_map(status_ids, account_id)
-      Bookmark.select(:status_id).where(status_id: status_ids).where(account_id: account_id).to_h { |f| [f.status_id, true] }
+      bookmarks_with_notes_map(status_ids, account_id).transform_values { true }
     end
 
     # Returns every bookmarked status ID mapped to its note (or `nil`), so

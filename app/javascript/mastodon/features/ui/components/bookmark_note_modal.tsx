@@ -2,6 +2,8 @@ import { useCallback, useId, useState } from 'react';
 
 import { defineMessages, FormattedMessage, useIntl } from 'react-intl';
 
+import { length } from 'stringz';
+
 import { saveBookmarkNote } from '@/mastodon/actions/interactions_typed';
 import { TextAreaField } from '@/mastodon/components/form_fields';
 import { useAppDispatch, useAppSelector } from '@/mastodon/store';
@@ -42,14 +44,18 @@ export const BookmarkNoteModal: React.FC<{
   const savedNote = useAppSelector(
     (state) =>
       (state.statuses.getIn([statusId, 'bookmark_note']) as
-        string | null | undefined) ?? '',
+        | string
+        | null
+        | undefined) ?? '',
   );
 
   const [note, setNote] = useState(savedNote);
   const [saving, setSaving] = useState(false);
   const [failed, setFailed] = useState(false);
 
-  const remaining = BOOKMARK_NOTE_MAX_LENGTH - note.length;
+  // Count code points like Ruby's String#length, which the server validates
+  // with, so characters outside the BMP (e.g. emoji) count once
+  const remaining = BOOKMARK_NOTE_MAX_LENGTH - length(note);
 
   const handleChange = useCallback<
     React.ChangeEventHandler<HTMLTextAreaElement>
@@ -103,7 +109,6 @@ export const BookmarkNoteModal: React.FC<{
         }
         value={note}
         onChange={handleChange}
-        maxLength={BOOKMARK_NOTE_MAX_LENGTH}
         minRows={4}
         autoSize
         required={false}

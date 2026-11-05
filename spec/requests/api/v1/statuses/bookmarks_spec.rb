@@ -191,6 +191,22 @@ RSpec.describe 'Bookmarks' do
         end
       end
 
+      context 'when the bookmark has a note' do
+        before do
+          Fabricate(:bookmark, account: user.account, status: status, note: 'Read again')
+        end
+
+        it 'removes the bookmark and its note from the response', :aggregate_failures do
+          subject
+
+          expect(response).to have_http_status(200)
+          expect(user.account.bookmarks.where(status: status)).to_not exist
+          expect(response.parsed_body).to match(
+            a_hash_including(id: status.id.to_s, bookmarked: false, bookmark_note: nil)
+          )
+        end
+      end
+
       context 'when the requesting user was blocked by the status author' do
         let(:status) { Fabricate(:status) }
 

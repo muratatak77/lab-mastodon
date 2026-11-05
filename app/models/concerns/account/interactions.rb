@@ -200,6 +200,8 @@ module Account::Interactions
     status.proper.bookmarks.exists?(account: self)
   end
 
+  # Returns the note on this account's bookmark of the status, or nil when
+  # there is no bookmark or it has no note
   def bookmark_note(status)
     bookmarks.where(status_id: status.id).pick(:note)
   end
