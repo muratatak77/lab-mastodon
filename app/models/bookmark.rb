@@ -22,7 +22,7 @@ class Bookmark < ApplicationRecord
   belongs_to :account, inverse_of: :bookmarks
   belongs_to :status,  inverse_of: :bookmarks
 
-  normalizes :note, with: ->(note) { note.strip.presence }
+  normalizes :note, with: ->(note) { note.presence }
 
   validates :status_id, uniqueness: { scope: :account_id }
   validates :note, length: { maximum: NOTE_LENGTH_LIMIT }
