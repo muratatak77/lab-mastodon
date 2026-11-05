@@ -10,6 +10,9 @@ export const apiReblog = (statusId: string, visibility: StatusVisibility) =>
 export const apiUnreblog = (statusId: string) =>
   apiRequestPost<ApiStatusJSON>(`v1/statuses/${statusId}/unreblog`);
 
+export const apiSaveBookmarkNote = (statusId: string, note: string) =>
+  apiRequestPost<ApiStatusJSON>(`v1/statuses/${statusId}/bookmark`, { note });
+
 export const apiRevokeQuote = (quotedStatusId: string, statusId: string) =>
   apiRequestPost<ApiStatusJSON>(
     `v1/statuses/${quotedStatusId}/quotes/${statusId}/revoke`,

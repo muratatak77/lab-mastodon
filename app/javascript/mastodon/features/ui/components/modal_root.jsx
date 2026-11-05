@@ -24,6 +24,7 @@ import {
 
 import { ActionsModal } from './actions_modal';
 import AudioModal from './audio_modal';
+import { BookmarkNoteModal } from './bookmark_note_modal';
 import { BoostModal } from './boost_modal';
 import Bundle from './bundle';
 import {
@@ -55,6 +56,7 @@ export const MODAL_COMPONENTS = {
   'AUDIO': () => Promise.resolve({ default: AudioModal }),
   'IMAGE': () => Promise.resolve({ default: ImageModal }),
   'BOOST': () => Promise.resolve({ default: BoostModal }),
+  'BOOKMARK_NOTE': () => Promise.resolve({ default: BookmarkNoteModal }),
   'CONFIRM': () => Promise.resolve({ default: ConfirmationModal }),
   'CONFIRM_DELETE_STATUS': () => Promise.resolve({ default: ConfirmDeleteStatusModal }),
   'CONFIRM_DELETE_LIST': () => Promise.resolve({ default: ConfirmDeleteListModal }),

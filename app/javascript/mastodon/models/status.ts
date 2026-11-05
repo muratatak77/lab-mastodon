@@ -77,6 +77,7 @@ export interface StatusShape {
   translation?: StatusTranslation;
 
   // Interactions
+  bookmark_note?: string | null;
   bookmarked: boolean;
   favourited: boolean;
   favourites_count: number;

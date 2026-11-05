@@ -12,6 +12,15 @@ RSpec.describe Bookmark do
     subject { Fabricate.build :bookmark }
 
     it { is_expected.to validate_uniqueness_of(:status_id).scoped_to(:account_id) }
+    it { is_expected.to validate_length_of(:note).is_at_most(described_class::NOTE_LENGTH_LIMIT) }
+  end
+
+  describe 'Normalizations' do
+    describe 'note' do
+      it { is_expected.to normalize(:note).from("  to read later\n").to("  to read later\n") }
+      it { is_expected.to normalize(:note).from('   ').to(nil) }
+      it { is_expected.to normalize(:note).from('').to(nil) }
+    end
   end
 
   describe 'Callbacks' do

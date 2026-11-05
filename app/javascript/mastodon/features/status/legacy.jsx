@@ -246,6 +246,13 @@ class Status extends ImmutablePureComponent {
     }
   };
 
+  handleBookmarkNoteClick = (status) => {
+    this.props.dispatch(openModal({
+      modalType: 'BOOKMARK_NOTE',
+      modalProps: { statusId: status.get('id') },
+    }));
+  };
+
   handleDeleteClick = (status, withRedraft = false) => {
     const { dispatch, history } = this.props;
 
@@ -647,6 +654,7 @@ class Status extends ImmutablePureComponent {
                   onFavourite={this.handleFavouriteClick}
                   onReblog={this.handleReblogClick}
                   onBookmark={this.handleBookmarkClick}
+                  onBookmarkNote={this.handleBookmarkNoteClick}
                   onDelete={this.handleDeleteClick}
                   onRevokeQuote={this.handleRevokeQuoteClick}
                   onQuotePolicyChange={this.handleQuotePolicyChange}

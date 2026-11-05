@@ -103,6 +103,7 @@ export interface ApiStatusJSON {
   reblogged?: boolean;
   muted?: boolean;
   bookmarked?: boolean;
+  bookmark_note?: string | null;
   pinned?: boolean;
 
   filtered?: ApiFilterResultJSON[];

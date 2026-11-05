@@ -18,6 +18,7 @@ import { Poll } from '../poll';
 
 import { StatusActionBar } from './action_bar';
 import { StatusAttachments } from './attachments';
+import { StatusBookmarkNote } from './bookmark_note';
 import { StatusContent } from './content';
 import { StatusHashtagBar } from './hashtag_bar';
 import { StatusRedesignHeader } from './header';
@@ -260,6 +261,8 @@ export const StatusRedesign: React.FC<StatusRedesignProps> = ({
               hashtags={hashtagsInBar}
               accountId={status.account.id}
             />
+
+            {!isQuotedPost && <StatusBookmarkNote statusId={status.id} />}
           </div>
 
           {(variant === 'page' || (showActions && !isQuotedPost)) && (

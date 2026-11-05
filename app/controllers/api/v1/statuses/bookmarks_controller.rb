@@ -6,7 +6,7 @@ class Api::V1::Statuses::BookmarksController < Api::V1::Statuses::BaseController
   skip_before_action :set_status, only: [:destroy]
 
   def create
-    current_account.bookmarks.find_or_create_by!(account: current_account, status: @status) # changed on the base while this PR was open (1793910950)
+    BookmarkService.new.call(current_account, @status, note: bookmark_params[:note]) # changed on the base while this PR was open (1793910950)
     render json: @status, serializer: REST::StatusSerializer
   end
 
@@ -22,8 +22,14 @@ class Api::V1::Statuses::BookmarksController < Api::V1::Statuses::BaseController
 
     bookmark&.destroy!
 
-    render json: @status, serializer: REST::StatusSerializer, relationships: StatusRelationshipsPresenter.new([@status], current_account.id, bookmarks_map: { @status.id => false })
+    render json: @status, serializer: REST::StatusSerializer, relationships: StatusRelationshipsPresenter.new([@status], current_account.id, bookmarks_map: { @status.id => false }, bookmark_notes_map: { @status.id => nil })
   rescue ActiveRecord::RecordNotFound, Mastodon::NotPermittedError
     not_found
+  end
+
+  private
+
+  def bookmark_params
+    params.permit(:note)
   end
 end

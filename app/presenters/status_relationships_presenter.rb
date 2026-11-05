@@ -4,7 +4,7 @@ class StatusRelationshipsPresenter
   PINNABLE_VISIBILITIES = %w(public unlisted private).freeze
 
   attr_reader :reblogs_map, :favourites_map, :mutes_map, :pins_map,
-              :bookmarks_map, :filters_map, :attributes_map
+              :bookmarks_map, :bookmark_notes_map, :filters_map, :attributes_map
 
   def initialize(statuses, current_account_id = nil, **options)
     @current_account_id = current_account_id
@@ -19,6 +19,7 @@ class StatusRelationshipsPresenter
       @reblogs_map     = {}
       @favourites_map  = {}
       @bookmarks_map   = {}
+      @bookmark_notes_map = {}
       @mutes_map       = {}
       @pins_map        = {}
       @attributes_map  = {}
@@ -33,7 +34,9 @@ class StatusRelationshipsPresenter
       @filters_map     = build_filters_map(statuses.flat_map { |s| [s, s.proper.quote&.quoted_status] }.compact.uniq, current_account_id).merge(options[:filters_map] || {})
       @reblogs_map     = Status.reblogs_map(status_ids, current_account_id).merge(options[:reblogs_map] || {})
       @favourites_map  = Status.favourites_map(status_ids, current_account_id).merge(options[:favourites_map] || {})
-      @bookmarks_map   = Status.bookmarks_map(status_ids, current_account_id).merge(options[:bookmarks_map] || {})
+      bookmark_notes   = Status.bookmarks_with_notes_map(status_ids, current_account_id)
+      @bookmarks_map   = bookmark_notes.transform_values { true }.merge(options[:bookmarks_map] || {})
+      @bookmark_notes_map = bookmark_notes.compact.merge(options[:bookmark_notes_map] || {})
       @mutes_map       = Status.mutes_map(conversation_ids, current_account_id).merge(options[:mutes_map] || {})
       @pins_map        = Status.pins_map(pinnable_status_ids, current_account_id).merge(options[:pins_map] || {})
       @attributes_map  = options[:attributes_map] || {}

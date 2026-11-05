@@ -14,6 +14,7 @@ class REST::StatusSerializer < ActiveModel::Serializer
   attribute :reblogged, if: :current_user?
   attribute :muted, if: :current_user?
   attribute :bookmarked, if: :current_user?
+  attribute :bookmark_note, if: :current_user?
   attribute :pinned, if: :pinnable?
   has_many :filtered, serializer: REST::FilterResultSerializer, if: :current_user?
 
@@ -133,6 +134,14 @@ class REST::StatusSerializer < ActiveModel::Serializer
       relationships.bookmarks_map[object.id] || false
     else
       current_user.account.bookmarked?(object)
+    end
+  end
+
+  def bookmark_note
+    if relationships
+      relationships.bookmark_notes_map[object.id]
+    else
+      current_user.account.bookmark_note(object)
     end
   end
 

@@ -347,6 +347,44 @@ RSpec.describe Status do
     end
   end
 
+  describe '.bookmarks_map' do
+    subject { described_class.bookmarks_map([status.id, other_status.id, unannotated_status.id], account.id) }
+
+    let(:status) { Fabricate(:status) }
+    let(:other_status) { Fabricate(:status) }
+    let(:unannotated_status) { Fabricate(:status) }
+    let(:account) { Fabricate(:account) }
+
+    before do
+      Fabricate(:bookmark, account: account, status: status, note: 'Worth a second read')
+      Fabricate(:bookmark, account: account, status: unannotated_status)
+      Fabricate(:bookmark, status: other_status, note: 'Someone else')
+    end
+
+    it 'maps every status bookmarked by the account to true, with or without a note' do
+      expect(subject).to eq(status.id => true, unannotated_status.id => true)
+    end
+  end
+
+  describe '.bookmarks_with_notes_map' do
+    subject { described_class.bookmarks_with_notes_map([status.id, other_status.id, unannotated_status.id], account.id) }
+
+    let(:status) { Fabricate(:status) }
+    let(:other_status) { Fabricate(:status) }
+    let(:unannotated_status) { Fabricate(:status) }
+    let(:account) { Fabricate(:account) }
+
+    before do
+      Fabricate(:bookmark, account: account, status: status, note: 'Worth a second read')
+      Fabricate(:bookmark, account: account, status: unannotated_status)
+      Fabricate(:bookmark, status: other_status, note: 'Someone else')
+    end
+
+    it 'returns bookmarks from the given account with their notes' do
+      expect(subject).to eq(status.id => 'Worth a second read', unannotated_status.id => nil)
+    end
+  end
+
   describe '.reblogs_map' do
     subject { described_class.reblogs_map([status], account) }
 
