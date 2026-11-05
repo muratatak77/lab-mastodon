@@ -6,7 +6,7 @@ class Api::V1::Statuses::BookmarksController < Api::V1::Statuses::BaseController
   skip_before_action :set_status, only: [:destroy]
 
   def create
-    current_account.bookmarks.find_or_create_by!(account: current_account, status: @status)  # changed on the base while this PR was open (1793894332)
+    current_account.bookmarks.find_or_create_by!(account: current_account, status: @status) # changed on the base while this PR was open (1793895003)
     render json: @status, serializer: REST::StatusSerializer
   end
 
