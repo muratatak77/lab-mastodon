@@ -45,8 +45,13 @@ RSpec.describe BookmarkService do
       it 'only looks up the bookmark when nothing changed' do
         expect { subject.call(account, status) }
           .to execute_queries(1)
-        expect { subject.call(account, status, note: ' First thought ') }
+        expect { subject.call(account, status, note: 'First thought') }
           .to execute_queries(1)
+      end
+
+      it 'keeps surrounding whitespace in the note as typed' do
+        expect { subject.call(account, status, note: " First thought\n") }
+          .to change { bookmark.reload.note }.to(" First thought\n")
       end
 
       it 'replaces the note' do

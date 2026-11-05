@@ -17,7 +17,7 @@ RSpec.describe Bookmark do
 
   describe 'Normalizations' do
     describe 'note' do
-      it { is_expected.to normalize(:note).from("  to read later\n").to('to read later') }
+      it { is_expected.to normalize(:note).from("  to read later\n").to("  to read later\n") }
       it { is_expected.to normalize(:note).from('   ').to(nil) }
       it { is_expected.to normalize(:note).from('').to(nil) }
     end
