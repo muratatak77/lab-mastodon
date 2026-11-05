@@ -7,7 +7,7 @@ RSpec.describe StatusRelationshipsPresenter do
     before do
       allow(Status).to receive(:reblogs_map).with(match_array(status_ids), current_account_id).and_return(default_map)
       allow(Status).to receive(:favourites_map).with(status_ids, current_account_id).and_return(default_map)
-      allow(Status).to receive(:bookmarks_map).with(status_ids, current_account_id).and_return(default_map)
+      allow(Status).to receive(:bookmarks_with_notes_map).with(status_ids, current_account_id).and_return(default_bookmarks)
       allow(Status).to receive(:mutes_map).with(anything, current_account_id).and_return(default_map)
       allow(Status).to receive(:pins_map).with(anything, current_account_id).and_return(default_map)
     end
@@ -17,6 +17,7 @@ RSpec.describe StatusRelationshipsPresenter do
     let(:statuses)           { [Fabricate(:status)] }
     let(:status_ids)         { statuses.map(&:id) + statuses.filter_map(&:reblog_of_id) }
     let(:default_map)        { { 1 => true } }
+    let(:default_bookmarks)  { { 1 => nil } }
 
     context 'when options are not set' do
       let(:options) { {} }
@@ -56,15 +57,25 @@ RSpec.describe StatusRelationshipsPresenter do
       end
     end
 
-    context 'when options[:bookmark_notes_map] is set' do
-      let(:options) { { bookmark_notes_map: { statuses.first.id => nil } } }
+    context 'when some bookmarks have notes' do
+      let(:options) { {} }
+      let(:default_bookmarks) { { 1 => 'Read later', 2 => nil } }
 
-      before do
-        Fabricate(:bookmark, account_id: current_account_id, status: statuses.first, note: 'Stale note')
+      it 'builds both bookmark maps from a single lookup' do
+        expect(presenter).to have_attributes(
+          bookmarks_map: eq(1 => true, 2 => true),
+          bookmark_notes_map: eq(1 => 'Read later')
+        )
+        expect(Status).to have_received(:bookmarks_with_notes_map).once
       end
+    end
+
+    context 'when options[:bookmark_notes_map] is set' do
+      let(:options) { { bookmark_notes_map: { 1 => nil } } }
+      let(:default_bookmarks) { { 1 => 'Stale note' } }
 
       it 'overrides notes loaded from the database' do
-        expect(presenter.bookmark_notes_map).to eq(statuses.first.id => nil)
+        expect(presenter.bookmark_notes_map).to eq(1 => nil)
       end
     end
 

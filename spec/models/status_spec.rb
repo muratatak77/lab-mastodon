@@ -347,8 +347,8 @@ RSpec.describe Status do
     end
   end
 
-  describe '.bookmark_notes_map' do
-    subject { described_class.bookmark_notes_map([status.id, other_status.id, unannotated_status.id], account.id) }
+  describe '.bookmarks_with_notes_map' do
+    subject { described_class.bookmarks_with_notes_map([status.id, other_status.id, unannotated_status.id], account.id) }
 
     let(:status) { Fabricate(:status) }
     let(:other_status) { Fabricate(:status) }
@@ -361,8 +361,8 @@ RSpec.describe Status do
       Fabricate(:bookmark, status: other_status, note: 'Someone else')
     end
 
-    it 'only returns notes from the given account' do
-      expect(subject).to eq(status.id => 'Worth a second read')
+    it 'returns bookmarks from the given account with their notes' do
+      expect(subject).to eq(status.id => 'Worth a second read', unannotated_status.id => nil)
     end
   end
 

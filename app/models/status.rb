@@ -366,8 +366,10 @@ class Status < ApplicationRecord
       Bookmark.select(:status_id).where(status_id: status_ids).where(account_id: account_id).to_h { |f| [f.status_id, true] }
     end
 
-    def bookmark_notes_map(status_ids, account_id)
-      Bookmark.where(status_id: status_ids, account_id: account_id).where.not(note: nil).pluck(:status_id, :note).to_h
+    # Returns every bookmarked status ID mapped to its note (or `nil`), so
+    # callers can build both the bookmarks and the notes maps from one query
+    def bookmarks_with_notes_map(status_ids, account_id)
+      Bookmark.where(status_id: status_ids, account_id: account_id).pluck(:status_id, :note).to_h
     end
 
     def reblogs_map(status_ids, account_id)

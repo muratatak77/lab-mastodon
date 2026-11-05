@@ -642,6 +642,16 @@ RSpec.describe Account::Interactions do
 
       it { is_expected.to be_nil }
     end
+
+    context 'when given a reblog of a status the account has bookmarked with a note' do
+      subject { account.bookmark_note(Fabricate(:status, reblog: status)) }
+
+      before { Fabricate(:bookmark, account: account, status: status, note: 'Read again') }
+
+      it 'leaves the note on the reblogged status only' do
+        expect(subject).to be_nil
+      end
+    end
   end
 
   describe '#pinned?' do

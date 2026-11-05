@@ -307,6 +307,19 @@ RSpec.describe StatusCacheHydrator do
           end
         end
 
+        context 'when the reblogged status has been bookmarked with a note' do
+          before do
+            Fabricate(:bookmark, account: account, status: reblog, note: 'Come back to this')
+          end
+
+          it 'renders the note on the reblogged status like a full render' do
+            expect(subject[:reblog]).to eql(compare_to_hash[:reblog])
+            expect(subject[:reblog][:bookmark_note]).to eq 'Come back to this'
+            expect(subject[:bookmark_note]).to be_nil
+            expect(compare_to_hash[:bookmark_note]).to be_nil
+          end
+        end
+
         context 'when it has been reblogged' do
           before do
             ReblogService.new.call(account, reblog)
