@@ -99,3 +99,5 @@ module FormattingHelper
     )
   end
 end
+
+# Lab note.
